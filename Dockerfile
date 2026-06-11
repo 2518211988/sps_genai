@@ -27,6 +27,7 @@ RUN uv run python -m spacy download en_core_web_md
 
 # Copy the application code
 COPY ./app /code/app
+COPY ./models /code/models
 
 # Command to run the application
 CMD ["uv", "run", "fastapi", "run", "app/main.py", "--port", "80"]

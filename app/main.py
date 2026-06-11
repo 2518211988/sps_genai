@@ -1,7 +1,13 @@
-from fastapi import FastAPI
+from io import BytesIO
+
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
+
 from app.bigram_model import BigramModel
 from app.embedding_model import calculate_embedding
+from app.image_classifier import predict_image
+
 
 app = FastAPI()
 
@@ -43,4 +49,27 @@ def get_embedding(request: EmbeddingRequest):
         "input_word": request.input_word,
         "dimension": len(embedding),
         "embedding": embedding,
+    }
+
+
+@app.post("/classify-image")
+async def classify_image(file: UploadFile = File(...)):
+    try:
+        image_bytes = await file.read()
+        image = Image.open(BytesIO(image_bytes))
+        prediction = predict_image(image)
+    except UnidentifiedImageError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is not a valid image.",
+        ) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    return {
+        "filename": file.filename,
+        **prediction,
     }

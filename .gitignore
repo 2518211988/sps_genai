@@ -15,3 +15,8 @@ wheels/
 
 # macOS metadata
 .DS_Store
+
+# Downloaded ML datasets
+data/
+sample_images/
+app/main.py.bak
