@@ -1,11 +1,13 @@
 from io import BytesIO
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import Response
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
 
 from app.bigram_model import BigramModel
 from app.embedding_model import calculate_embedding
+from app.gan_generator import generate_digit_image
 from app.image_classifier import predict_image
 
 
@@ -73,3 +75,40 @@ async def classify_image(file: UploadFile = File(...)):
         "filename": file.filename,
         **prediction,
     }
+
+@app.get(
+    "/generate-digit",
+    response_class=Response,
+    responses={
+        200: {
+            "content": {
+                "image/png": {}
+            },
+            "description": (
+                "A randomly generated 28×28 "
+                "grayscale MNIST-style digit."
+            ),
+        }
+    },
+)
+def generate_digit():
+    try:
+        image = generate_digit_image()
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    image_buffer = BytesIO()
+    image.save(image_buffer, format="PNG")
+
+    return Response(
+        content=image_buffer.getvalue(),
+        media_type="image/png",
+        headers={
+            "Content-Disposition": (
+                "inline; filename=generated_digit.png"
+            )
+        },
+    )

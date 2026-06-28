@@ -20,3 +20,6 @@ wheels/
 data/
 sample_images/
 app/main.py.bak
+
+# Generated GAN sample images
+samples/
